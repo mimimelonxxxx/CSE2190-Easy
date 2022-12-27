@@ -75,9 +75,10 @@ def checkFloat(VALUE) -> bool:
     except ValueError:
         return False
 
-def setupDatabase() -> None:
+def extractFiles() -> list:
     """
-    reads files and creates tables within the database from the csv files
+    reads files and extracts data from csv files
+    :return: REGULARDATA list, OVERTIMEDATA list, SUMMARYDATA list, TOTALDATA list
     """
     global CONNECTION, CURSOR, REGULARFILE, TOTALFILE, OVERTIMEFILE, SUMMARYFILE
 
@@ -90,6 +91,7 @@ def setupDatabase() -> None:
     TOTALFILE = open(TOTALFILE)
     TOTALDATA = TOTALFILE.readlines()
 
+    # REGULAR HOURS DATA 
     for i in range(len(REGULARDATA)):
         if REGULARDATA[i][-1] == "\n":
                 REGULARDATA[i] = REGULARDATA[i][:-1] 
@@ -98,41 +100,105 @@ def setupDatabase() -> None:
             if checkFloat(REGULARDATA[i][j]):
                 REGULARDATA[i][j] = float(REGULARDATA[i][j])
 
+    # OVERTIME DATA 
     for i in range(len(OVERTIMEDATA)):
         if OVERTIMEDATA[i][-1] == "\n":
                 OVERTIMEDATA[i] = OVERTIMEDATA[i][:-1] 
         OVERTIMEDATA[i] = OVERTIMEDATA[i].split(",")
         for j in range(len(OVERTIMEDATA[i])):
             if OVERTIMEDATA[i][j] == '':
-                OVERTIMEDATA[i][j] == 0
+                OVERTIMEDATA[i][j] = 0
             if checkFloat(OVERTIMEDATA[i][j]):
                 OVERTIMEDATA[i][j] = float(OVERTIMEDATA[i][j])
+    
+    # SUMMARY DATA
+    for i in range(len(SUMMARYDATA)):
+        if SUMMARYDATA[i][-1] == "\n":
+                SUMMARYDATA[i] = SUMMARYDATA[i][:-1] 
+        SUMMARYDATA[i] = SUMMARYDATA[i].split(",")
+        for j in range(len(SUMMARYDATA[i])):
+            if SUMMARYDATA[i][j] == '':
+                SUMMARYDATA[i][j] = 0
+            if SUMMARYDATA[i][j].isnumeric():
+                SUMMARYDATA[i][j] = int(SUMMARYDATA[i][j])
 
-    print(OVERTIMEDATA)
+    # TOTAL DATA
+    for i in range(len(TOTALDATA)):
+        if TOTALDATA[i][-1] == "\n":
+                TOTALDATA[i] = TOTALDATA[i][:-1] 
+        TOTALDATA[i] = TOTALDATA[i].split(",")
+        for j in range(len(TOTALDATA[i])):
+            if TOTALDATA[i][j] == '':
+                TOTALDATA[i][j] = 0
+            if checkFloat(TOTALDATA[i][j]):
+                TOTALDATA[i][j] = float(TOTALDATA[i][j])
 
-    #CURSOR.execute("""
-    #    CREATE TABLE 
-    #        member_hours (
-    #            member_name TEXT NOT NULL,
-    #            total_member_hours REAL NOT NULL
-    #        );
-    #""")
-#
-    #CURSOR.execute("""
-    #    CREATE TABLE 
-    #        overtime (
-    #            name_of_event TEXT NOT NULL,
-    #            overtime INTEGER NOT NULL,
-    #            total_duration REAL NOT NULL
-    #        );
-    #""")
-#
-    #CURSOR.execute("""
-    #    CREATE TABLE 
-    #        total_hours (
-    #            total_hours REAL NOT NULL
-    #        );
-    #""")
+    return REGULARDATA, OVERTIMEDATA, SUMMARYDATA, TOTALDATA
+
+def setupDatabase(REGULARDATA, OVERTIMEDATA, SUMMARYDATA, TOTALDATA):
+    """
+    creates database using data from files 
+    :param REGULARDATA: list
+    :param OVERTIMEDATA: list
+    :param SUMMARYDATA: list
+    :param TOTALDATA: list 
+    :return: None
+    """
+    # REGULAR
+    global CURSOR, CONNECTION
+    CURSOR.execute("""
+            CREATE TABLE 
+                regular_hours (
+                    member_name TEXT NOT NULL PRIMARY KEY,
+                    total_regular REAL NOT NULL
+                );
+        """)
+    # create multiple tables for each row of data each time
+    for i in range(1, len(REGULARDATA[0])-1):
+        CURSOR.execute(f"""
+            CREATE TABLE
+                {REGULARDATA[0][i]} (
+                    member_name TEXT NOT NULL PRIMARY KEY,
+                    {REGULARDATA[0][i]} TEXT NOT NULL
+                );
+        """)
+
+    # OVERTIME 
+    CURSOR.execute("""
+            CREATE TABLE 
+                overtime (
+                    member_name TEXT NOT NULL PRIMARY KEY,
+                    total_overtime REAL NOT NULL
+                );
+        """)
+    # create multiple tables for each row of data each time
+    for i in range(1, len(OVERTIMEDATA[0])-1):
+        CURSOR.execute(f"""
+            CREATE TABLE
+                {OVERTIMEDATA[0][i]} (
+                    member_name TEXT NOT NULL PRIMARY KEY,
+                    {OVERTIMEDATA[0][i]} TEXT NOT NULL
+                );
+        """)
+
+    # SUMMARY 
+    CURSOR.execute("""
+        CREATE TABLE 
+            summary (
+                name_of_event TEXT NOT NULL PRIMARY KEY,
+                overtime INTEGER NOT NULL, 
+                total_duration INTEGER NOT NULL
+            );
+    """) 
+
+    # TOTAL
+    CURSOR.execute("""
+        CREATE TABLE
+            total_hours (
+                total_regular REAL NOT NULL,
+                total_overtime REAL NOT NULL
+            );
+    """)
 
 # INPUTS # 
 
@@ -164,7 +230,8 @@ Please choose one of the following:
 if __name__ == "__main__":
 # INPUTS #
     welcome()
-    setupDatabase()
+    REGULARDATA, OVERTIMEDATA, SUMMARYDATA, TOTALDATA = extractFiles()
+    setupDatabase(REGULARDATA, OVERTIMEDATA, SUMMARYDATA, TOTALDATA)
     CHOICE = menu()
 # PROCESSING #
 
