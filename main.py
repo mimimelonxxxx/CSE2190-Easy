@@ -153,6 +153,17 @@ def setupDatabase(REGULARDATA, OVERTIMEDATA, SUMMARYDATA, TOTALDATA):
                     total_regular REAL NOT NULL
                 );
         """)
+
+    for i in range(1, len(REGULARDATA)):
+        CURSOR.execute(f"""
+            INSERT INTO 
+                regular_hours
+            VALUES (
+                ?,
+                ?
+            );
+        """, [REGULARDATA[i][0], REGULARDATA[i][-1]])
+
     # create multiple tables for each row of data each time
     for i in range(1, len(REGULARDATA[0])-1):
         CURSOR.execute(f"""
@@ -162,6 +173,15 @@ def setupDatabase(REGULARDATA, OVERTIMEDATA, SUMMARYDATA, TOTALDATA):
                     {REGULARDATA[0][i]} TEXT NOT NULL
                 );
         """)
+        for j in range(1, len(REGULARDATA)):
+            CURSOR.execute(f"""
+                INSERT INTO
+                    {REGULARDATA[0][i]}
+                VALUES (
+                    ?,
+                    ?
+                );
+            """, [REGULARDATA[j][0], REGULARDATA[j][i]])
 
     # OVERTIME 
     CURSOR.execute("""
@@ -171,6 +191,17 @@ def setupDatabase(REGULARDATA, OVERTIMEDATA, SUMMARYDATA, TOTALDATA):
                     total_overtime REAL NOT NULL
                 );
         """)
+
+    for i in range(1, len(OVERTIMEDATA)):
+        CURSOR.execute(f"""
+            INSERT INTO 
+                overtime
+            VALUES (
+                ?,
+                ?
+            );
+        """, [OVERTIMEDATA[i][0], OVERTIMEDATA[i][-1]])
+
     # create multiple tables for each row of data each time
     for i in range(1, len(OVERTIMEDATA[0])-1):
         CURSOR.execute(f"""
@@ -180,6 +211,15 @@ def setupDatabase(REGULARDATA, OVERTIMEDATA, SUMMARYDATA, TOTALDATA):
                     {OVERTIMEDATA[0][i]} TEXT NOT NULL
                 );
         """)
+        for j in range(1, len(OVERTIMEDATA)):
+            CURSOR.execute(f"""
+                INSERT INTO
+                    {OVERTIMEDATA[0][i]}
+                VALUES (
+                    ?,
+                    ?
+                );
+            """, [OVERTIMEDATA[j][0], OVERTIMEDATA[j][i]])
 
     # SUMMARY 
     CURSOR.execute("""
@@ -191,6 +231,17 @@ def setupDatabase(REGULARDATA, OVERTIMEDATA, SUMMARYDATA, TOTALDATA):
             );
     """) 
 
+    for i in range(1, len(SUMMARYDATA)):
+        CURSOR.execute("""
+            INSERT INTO 
+                summary
+            VALUES (
+                ?,
+                ?,
+                ?
+            );
+        """, [SUMMARYDATA[i][0], SUMMARYDATA[i][1], SUMMARYDATA[i][2]])
+
     # TOTAL
     CURSOR.execute("""
         CREATE TABLE
@@ -199,6 +250,18 @@ def setupDatabase(REGULARDATA, OVERTIMEDATA, SUMMARYDATA, TOTALDATA):
                 total_overtime REAL NOT NULL
             );
     """)
+
+    for i in range(1, len(TOTALDATA)):
+        CURSOR.execute("""
+            INSERT INTO
+                total_hours
+            VALUES (
+                ?,
+                ?
+            );
+        """, [TOTALDATA[i][0], TOTALDATA[i][1]])
+
+    CONNECTION.commit()
 
 # INPUTS # 
 
