@@ -488,42 +488,15 @@ def wageDatabase(TOTALWAGES) -> None:
 
     CONNECTION.commit()
 
-def conglomerateTable(REGULARDATA, OVERTIMEDATA, SUMMARYDATA, TOTALDATA, PRODUCTIONDATA, SALESDATA, WAGEDATA) -> None:
+# PROCESSING # 
+
+def conglomerateTable() -> None:
     """
-    creates a table with all data 
+    joins all tables that uses member_name as a primary key together 
     :return: None
     """
     global CURSOR, CONNECTION
-
-    CURSOR.execute("""
-        CREATE TABLE 
-            member_data (
-                member_name
-            );
-    """)
-
-    for i in range(len(REGULARDATA)):
-        for j in range(1, len(REGULARDATA[i])-1):
-            CURSOR.execute(f"""
-                ALTER TABLE 
-                    member_data
-                ADD
-                    {REGULARDATA[0][j]};
-            """)
-    CURSOR.execute("""
-        ALERT TABLE 
-            member_data
-        ADD
-            total_regular
-    """)
-
-    for i in range(len(OVERTIMEDATA)):
-        for j in range(1, len(OVERTIMEDATA[i])):
-            CURSOR.execute(f"""
-            
-            """)
-
-    CONNECTION.commit()
+    
 
 # OUTPUTS # 
 
@@ -536,7 +509,7 @@ if __name__ == "__main__":
         setupDatabase(REGULARDATA, OVERTIMEDATA, SUMMARYDATA, TOTALDATA, PRODUCTIONDATA, SALESDATA)
         TOTALWAGES = calculateWages()
         wageDatabase(TOTALWAGES)
-        conglomerateTable(REGULARDATA, OVERTIMEDATA, SUMMARYDATA, TOTALDATA, PRODUCTIONDATA, SALESDATA, TOTALWAGES)
+        conglomerateTable()
     CHOICE = menu()
 # PROCESSING #
     if CHOICE == 1:
