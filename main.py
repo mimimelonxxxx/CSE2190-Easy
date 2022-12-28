@@ -22,6 +22,8 @@ REGULARFILE = "JA Wage Calculation - Regular Hours.csv"
 OVERTIMEFILE = "JA Wage Calculation - Overtime.csv"
 SUMMARYFILE = "JA Wage Calculation - Summary.csv"
 TOTALFILE = "JA Wage Calculation - Total Hours.csv"
+PRODUCTIONFILE = "JA Wage Calculation - Production.csv"
+SALESFILE = "JA Wage Calculation - Sales.csv"
 
 ### FUNCTIONS ###
 
@@ -80,7 +82,7 @@ def extractFiles() -> list:
     reads files and extracts data from csv files
     :return: REGULARDATA list, OVERTIMEDATA list, SUMMARYDATA list, TOTALDATA list
     """
-    global CONNECTION, CURSOR, REGULARFILE, TOTALFILE, OVERTIMEFILE, SUMMARYFILE
+    global CONNECTION, CURSOR, REGULARFILE, TOTALFILE, OVERTIMEFILE, SUMMARYFILE, PRODUCTIONFILE, SALESFILE
 
     REGULARFILE = open(REGULARFILE)
     REGULARDATA = REGULARFILE.readlines()
@@ -90,6 +92,10 @@ def extractFiles() -> list:
     OVERTIMEDATA = OVERTIMEFILE.readlines()
     TOTALFILE = open(TOTALFILE)
     TOTALDATA = TOTALFILE.readlines()
+    PRODUCTIONFILE = open(PRODUCTIONFILE)
+    PRODUCTIONDATA = PRODUCTIONFILE.readlines()
+    SALESFILE = open(SALESFILE)
+    SALESDATA = SALESFILE.readlines()
 
     # REGULAR HOURS DATA 
     for i in range(len(REGULARDATA)):
@@ -133,15 +139,39 @@ def extractFiles() -> list:
             if checkFloat(TOTALDATA[i][j]):
                 TOTALDATA[i][j] = float(TOTALDATA[i][j])
 
-    return REGULARDATA, OVERTIMEDATA, SUMMARYDATA, TOTALDATA
+    # PRODUCTION DATA
+    for i in range(len(PRODUCTIONDATA)):
+        if PRODUCTIONDATA[i][-1] == "\n":
+                PRODUCTIONDATA[i] = PRODUCTIONDATA[i][:-1] 
+        PRODUCTIONDATA[i] = PRODUCTIONDATA[i].split(",")
+        for j in range(len(PRODUCTIONDATA[i])):
+            if PRODUCTIONDATA[i][j] == '':
+                PRODUCTIONDATA[i][j] = 0
+            if PRODUCTIONDATA[i][j].isnumeric():
+                PRODUCTIONDATA[i][j] = int(PRODUCTIONDATA[i][j])
 
-def setupDatabase(REGULARDATA, OVERTIMEDATA, SUMMARYDATA, TOTALDATA):
+    # SALES DATA
+    for i in range(len(SALESDATA)):
+        if SALESDATA[i][-1] == "\n":
+                SALESDATA[i] = SALESDATA[i][:-1] 
+        SALESDATA[i] = SALESDATA[i].split(",")
+        for j in range(len(SALESDATA[i])):
+            if SALESDATA[i][j] == '':
+                SALESDATA[i][j] = 0
+            if SALESDATA[i][j].isnumeric():
+                SALESDATA[i][j] = int(SALESDATA[i][j])
+
+    return REGULARDATA, OVERTIMEDATA, SUMMARYDATA, TOTALDATA, PRODUCTIONDATA, SALESDATA
+
+def setupDatabase(REGULARDATA, OVERTIMEDATA, SUMMARYDATA, TOTALDATA, PRODUCTIONDATA, SALESDATA) -> None:
     """
     creates database using data from files 
     :param REGULARDATA: list
     :param OVERTIMEDATA: list
     :param SUMMARYDATA: list
     :param TOTALDATA: list 
+    :param PRODUCTIONDATA: list
+    :param SALESDATA: list
     :return: None
     """
     # REGULAR
@@ -261,6 +291,44 @@ def setupDatabase(REGULARDATA, OVERTIMEDATA, SUMMARYDATA, TOTALDATA):
             );
         """, [TOTALDATA[i][0], TOTALDATA[i][1]])
 
+    # PRODUCTION
+    CURSOR.execute("""
+        CREATE TABLE
+            production (
+                member_name TEXT NOT NULL PRIMARY KEY,
+                amount_produced INTEGER NOT NULL
+            );
+    """)
+
+    for i in range(1, len(PRODUCTIONDATA)):
+        CURSOR.execute("""
+            INSERT INTO
+                production
+            VALUES (
+                ?,
+                ?
+            );
+        """, [PRODUCTIONDATA[i][0], PRODUCTIONDATA[i][1]])
+
+    # SALES
+    CURSOR.execute("""
+        CREATE TABLE
+            sales (
+                member_name TEXT NOT NULL PRIMARY KEY,
+                amount_sold INTEGER NOT NULL
+            );
+    """)
+
+    for i in range(1, len(SALESDATA)):
+        CURSOR.execute("""
+            INSERT INTO
+                sales
+            VALUES (
+                ?,
+                ?
+            );
+        """, [SALESDATA[i][0], SALESDATA[i][1]])
+
     CONNECTION.commit()
 
 # INPUTS # 
@@ -280,12 +348,66 @@ def menu() -> int:
 Please choose one of the following:
 1. View all data
 2. Search for member data 
+3. Exit
     """)
     CHOICE = input("> ")
-    CHOICE = checkInt(CHOICE, 1, 2)
+    CHOICE = checkInt(CHOICE, 1, 3)
     return CHOICE 
 
+def getMember():
+    """
+    user inputs member name to search for 
+    :return: str
+    """
+    global CURSOR
+    print("Please input member name: ")
+    NAME = input("> ")
+    return NAME
+
 # PROCESSING # 
+
+def calculateWages() -> list:
+    """
+    calculates percentage wages for all members in the database 
+    :return: list (each members wages in order)
+    """
+    TOTALREGULAR = CURSOR.execute("""
+        SELECT
+            total_regular
+        FROM
+            total_hours;
+    """).fetchone()
+
+    TOTALOVERTIME = CURSOR.execute("""
+        SELECT
+            total_overtime
+        FROM
+            total_hours;
+    """).fetchone()
+
+    MEMBERREGULAR = CURSOR.execute("""
+        SELECT
+            *
+        FROM 
+            regular_hours;
+    """).fetchall()
+
+    MEMBEROVERTIME = CURSOR.execute("""
+        SELECT 
+            * 
+        FROM    
+            overtime;
+    """).fetchall()
+
+    # calculate total hours 
+    TOTALHOURS = TOTALREGULAR[0] + TOTALOVERTIME[0]
+    TOTALHOURS = round(TOTALHOURS, 2)
+    
+    # calculate each members percentage 
+    #for i in range(len(MEMBERREGULAR)):
+    #    if MEMBERREGULAR[i][1] >= 
+
+
 
 # OUTPUTS # 
 
@@ -293,9 +415,16 @@ Please choose one of the following:
 if __name__ == "__main__":
 # INPUTS #
     welcome()
-    REGULARDATA, OVERTIMEDATA, SUMMARYDATA, TOTALDATA = extractFiles()
-    setupDatabase(REGULARDATA, OVERTIMEDATA, SUMMARYDATA, TOTALDATA)
+    if FIRSTRUN:
+        REGULARDATA, OVERTIMEDATA, SUMMARYDATA, TOTALDATA, PRODUCTIONDATA, SALESDATA = extractFiles()
+        setupDatabase(REGULARDATA, OVERTIMEDATA, SUMMARYDATA, TOTALDATA, PRODUCTIONDATA, SALESDATA)
     CHOICE = menu()
+    if CHOICE == 1:
+        calculateWages()
+    elif CHOICE == 2:
+        NAME = getMember()
 # PROCESSING #
 
 # OUTPUTS #
+    elif CHOICE == 3:
+        exit()
