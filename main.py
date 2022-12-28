@@ -257,7 +257,8 @@ def setupDatabase(REGULARDATA, OVERTIMEDATA, SUMMARYDATA, TOTALDATA, PRODUCTIOND
             summary (
                 name_of_event TEXT NOT NULL PRIMARY KEY,
                 overtime INTEGER NOT NULL, 
-                total_duration INTEGER NOT NULL
+                total_duration INTEGER NOT NULL, 
+                total_attendance INTEGER NOT NULL
             );
     """) 
 
@@ -268,9 +269,10 @@ def setupDatabase(REGULARDATA, OVERTIMEDATA, SUMMARYDATA, TOTALDATA, PRODUCTIOND
             VALUES (
                 ?,
                 ?,
+                ?, 
                 ?
             );
-        """, [SUMMARYDATA[i][0], SUMMARYDATA[i][1], SUMMARYDATA[i][2]])
+        """, [SUMMARYDATA[i][0], SUMMARYDATA[i][1], SUMMARYDATA[i][2], SUMMARYDATA[i][3]])
 
     # TOTAL
     CURSOR.execute("""
@@ -326,6 +328,14 @@ def setupDatabase(REGULARDATA, OVERTIMEDATA, SUMMARYDATA, TOTALDATA, PRODUCTIOND
                 ?
             );
         """, [SALESDATA[i][0], SALESDATA[i][1]])
+
+    CURSOR.execute("""
+            CREATE TABLE 
+                wages (
+                    member_name TEXT NOT NULL PRIMARY KEY , 
+                    percent_wages REAL NOT NULL 
+                );
+        """)
 
     CONNECTION.commit()
 
@@ -410,7 +420,7 @@ def calculateWages() -> list:
     # calculate each members percentage 
     TOTALWAGES = []
     TOTALPERCENTAGE = 100
-    # there are issues with this chunk of code and the while loops
+
     for i in range(len(MEMBERREGULAR)): # the length of MEMBERREGULAR should be the same as the other lists 
         # distributes all wages based solely on hours 
         TOTALMEMBER = MEMBERREGULAR[i][1] + MEMBEROVERTIME[i][1]
@@ -447,7 +457,73 @@ def calculateWages() -> list:
         for i in range(len(TOTALWAGES)):
             PERCENTAGE = TOTALPERCENTAGE / len(TOTALWAGES)
             TOTALWAGES[i] = TOTALWAGES[i] + PERCENTAGE
+
+    for i in range(len(TOTALWAGES)):
+        TOTALWAGES[i] = round(TOTALWAGES[i], 2)
     return(TOTALWAGES)
+
+def wageDatabase(TOTALWAGES) -> None:
+    """
+    creates a database with wage information 
+    :return: None
+    """
+    global CURSOR, CONNECTION
+
+    MEMBERREGULAR = CURSOR.execute("""
+        SELECT
+            member_name
+        FROM 
+            regular_hours;
+    """).fetchall()
+
+    for i in range(len(TOTALWAGES)):
+        CURSOR.execute("""
+            INSERT INTO 
+                wages
+            VALUES (
+                ?,
+                ?
+            );
+        """, [MEMBERREGULAR[i][0], TOTALWAGES[i]])
+
+    CONNECTION.commit()
+
+def conglomerateTable(REGULARDATA, OVERTIMEDATA, SUMMARYDATA, TOTALDATA, PRODUCTIONDATA, SALESDATA, WAGEDATA) -> None:
+    """
+    creates a table with all data 
+    :return: None
+    """
+    global CURSOR, CONNECTION
+
+    CURSOR.execute("""
+        CREATE TABLE 
+            member_data (
+                member_name
+            );
+    """)
+
+    for i in range(len(REGULARDATA)):
+        for j in range(1, len(REGULARDATA[i])-1):
+            CURSOR.execute(f"""
+                ALTER TABLE 
+                    member_data
+                ADD
+                    {REGULARDATA[0][j]};
+            """)
+    CURSOR.execute("""
+        ALERT TABLE 
+            member_data
+        ADD
+            total_regular
+    """)
+
+    for i in range(len(OVERTIMEDATA)):
+        for j in range(1, len(OVERTIMEDATA[i])):
+            CURSOR.execute(f"""
+            
+            """)
+
+    CONNECTION.commit()
 
 # OUTPUTS # 
 
@@ -458,11 +534,13 @@ if __name__ == "__main__":
     if FIRSTRUN:
         REGULARDATA, OVERTIMEDATA, SUMMARYDATA, TOTALDATA, PRODUCTIONDATA, SALESDATA = extractFiles()
         setupDatabase(REGULARDATA, OVERTIMEDATA, SUMMARYDATA, TOTALDATA, PRODUCTIONDATA, SALESDATA)
+        TOTALWAGES = calculateWages()
+        wageDatabase(TOTALWAGES)
+        conglomerateTable(REGULARDATA, OVERTIMEDATA, SUMMARYDATA, TOTALDATA, PRODUCTIONDATA, SALESDATA, TOTALWAGES)
     CHOICE = menu()
 # PROCESSING #
     if CHOICE == 1:
-        TOTALWAGES = calculateWages()
-        print(TOTALWAGES)
+        pass
     elif CHOICE == 2:
         NAME = getMember()
 # OUTPUTS #
