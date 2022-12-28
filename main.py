@@ -399,13 +399,35 @@ def calculateWages() -> list:
             overtime;
     """).fetchall()
 
+    MEMBERPRODUCTION = CURSOR.execute("""
+        SELECT
+            *
+        FROM
+            production;
+    """).fetchall()
+
+    MEMBERSALES = CURSOR.execute("""
+        SELECT
+            *
+        FROM
+            sales; 
+    """).fetchall()
+
     # calculate total hours 
     TOTALHOURS = TOTALREGULAR[0] + TOTALOVERTIME[0]
     TOTALHOURS = round(TOTALHOURS, 2)
-    
+
     # calculate each members percentage 
-    #for i in range(len(MEMBERREGULAR)):
-    #    if MEMBERREGULAR[i][1] >= 
+    TOTALWAGES = []
+    for i in range(len(MEMBERREGULAR)): # the length of MEMBERREGULAR should be the same as the other lists 
+        TOTALMEMBER = MEMBERREGULAR[i][1] + MEMBEROVERTIME[i][1]
+        MEMBERWAGES = TOTALMEMBER/TOTALHOURS * 100
+        if MEMBERREGULAR[i][1] >= 20 or MEMBERPRODUCTION[i][1] >= 20 or MEMBERSALES[i][1] >= 20:
+            TOTALMEMBER = TOTALMEMBER * 1.02
+            MEMBERWAGES = TOTALMEMBER/TOTALHOURS * 100
+        elif MEMBEROVERTIME[i][1] >= 20:
+            pass
+    print(TOTALWAGES)
 
 
 
@@ -419,12 +441,11 @@ if __name__ == "__main__":
         REGULARDATA, OVERTIMEDATA, SUMMARYDATA, TOTALDATA, PRODUCTIONDATA, SALESDATA = extractFiles()
         setupDatabase(REGULARDATA, OVERTIMEDATA, SUMMARYDATA, TOTALDATA, PRODUCTIONDATA, SALESDATA)
     CHOICE = menu()
+# PROCESSING #
     if CHOICE == 1:
         calculateWages()
     elif CHOICE == 2:
         NAME = getMember()
-# PROCESSING #
-
 # OUTPUTS #
     elif CHOICE == 3:
         exit()
