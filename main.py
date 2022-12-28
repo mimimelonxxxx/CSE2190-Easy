@@ -576,6 +576,7 @@ if __name__ == "__main__":
     if CHOICE == 1:
         REGULARDATA, OVERTIMEDATA, SUMMARYDATA, TOTALDATA, PRODUCTIONDATA, SALESDATA = extractFiles()
         conglomerateTable(REGULARDATA, OVERTIMEDATA)
+        # will print a table in the flask app
     elif CHOICE == 2:
         NAME = getMember()
         queryWages(NAME)
