@@ -410,27 +410,44 @@ def calculateWages() -> list:
     # calculate each members percentage 
     TOTALWAGES = []
     TOTALPERCENTAGE = 100
+    # there are issues with this chunk of code and the while loops
     for i in range(len(MEMBERREGULAR)): # the length of MEMBERREGULAR should be the same as the other lists 
+        # distributes all wages based solely on hours 
         TOTALMEMBER = MEMBERREGULAR[i][1] + MEMBEROVERTIME[i][1]
         MEMBERWAGES = TOTALMEMBER/TOTALHOURS * 100
-        if MEMBERREGULAR[i][1] >= 20 or MEMBERPRODUCTION[i][1] >= 20 or MEMBERSALES[i][1] >= 20:
+        # calculates regular hours 
+        MEMBERREGULAR[i] = list(MEMBERREGULAR[i])
+        while MEMBERREGULAR[i][1] >= 20:
             TOTALMEMBER = TOTALMEMBER * 1.02
             MEMBERWAGES = TOTALMEMBER/TOTALHOURS * 100
-            TOTALPERCENTAGE = TOTALPERCENTAGE - MEMBERWAGES
-            if TOTALPERCENTAGE < 0:
-                print("Michelle you messed up real bad")
-            TOTALWAGES.append(MEMBERWAGES)
-        elif MEMBEROVERTIME[i][1] >= 20:
-            TOTALMEMBER = TOTALMEMBER * 1.2
+            MEMBERREGULAR[i][1] = MEMBERREGULAR[i][1] - 20
+        # calculates production 
+        MEMBERPRODUCTION[i] = list(MEMBERPRODUCTION[i])
+        while MEMBERPRODUCTION[i][1] >= 20:
+            TOTALMEMBER = TOTALMEMBER * 1.02
             MEMBERWAGES = TOTALMEMBER/TOTALHOURS * 100
-            TOTALPERCENTAGE = TOTALPERCENTAGE - MEMBERWAGES
-            if TOTALPERCENTAGE < 0:
-                print("Michelle you messed up real bad")
-            TOTALWAGES.append(MEMBERWAGES)
-    print(TOTALPERCENTAGE)
-    print(TOTALWAGES)
-# THIS PART NEEDS FIXING ^ 
-
+            MEMBERPRODUCTION[i][1] = MEMBERPRODUCTION[i][1] - 20
+        # calculates sales 
+        MEMBERSALES[i] = list(MEMBERSALES[i])
+        while MEMBERSALES[i][1] >= 20:
+            TOTALMEMBER = TOTALMEMBER * 1.02
+            MEMBERWAGES = TOTALMEMBER/TOTALHOURS * 100
+            MEMBERSALES[i][1] = MEMBERSALES[i][1] - 20
+        # calculates overtime hours 
+        MEMBEROVERTIME[i] = list(MEMBEROVERTIME[i])
+        while MEMBEROVERTIME[i][1] >= 20:
+            TOTALMEMBER = TOTALMEMBER * 1.1
+            MEMBERWAGES = TOTALMEMBER/TOTALHOURS * 100
+            MEMBEROVERTIME[i][1] = MEMBEROVERTIME[i][1] - 20
+        TOTALPERCENTAGE = TOTALPERCENTAGE - MEMBERWAGES
+        TOTALWAGES.append(MEMBERWAGES)
+    
+    # distributes any overcompensations equally 
+    if TOTALPERCENTAGE < 0:
+        for i in range(len(TOTALWAGES)):
+            PERCENTAGE = TOTALPERCENTAGE / len(TOTALWAGES)
+            TOTALWAGES[i] = TOTALWAGES[i] + PERCENTAGE
+    return(TOTALWAGES)
 
 # OUTPUTS # 
 
@@ -444,7 +461,8 @@ if __name__ == "__main__":
     CHOICE = menu()
 # PROCESSING #
     if CHOICE == 1:
-        calculateWages()
+        TOTALWAGES = calculateWages()
+        print(TOTALWAGES)
     elif CHOICE == 2:
         NAME = getMember()
 # OUTPUTS #
