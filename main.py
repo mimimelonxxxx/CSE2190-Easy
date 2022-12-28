@@ -490,13 +490,75 @@ def wageDatabase(TOTALWAGES) -> None:
 
 # PROCESSING # 
 
-def conglomerateTable() -> None:
+def conglomerateTable(REGULARDATA, OVERTIMEDATA) -> None:
     """
     joins all tables that uses member_name as a primary key together 
+    :param REGULARDATA: list
+    :param OVERTIMEDATA: list 
     :return: None
     """
     global CURSOR, CONNECTION
     
+    #MEMBERDATA = []
+
+    #for i in range(1, len(REGULARDATA[0])-1):
+    MEMBERDATA = CURSOR.execute(f"""
+        SELECT
+            regular_hours.member_name,
+            _2022_12_15._2022_12_15,
+            regular_hours.total_regular,
+            _2022_12_18_discord._2022_12_18_discord,
+            overtime.total_overtime,
+            production.amount_produced,
+            sales.amount_sold,
+            wages.percent_wages
+        FROM
+            regular_hours
+        JOIN
+            _2022_12_15
+        ON
+            _2022_12_15.member_name = regular_hours.member_name
+        JOIN 
+            _2022_12_18_discord
+        ON
+            _2022_12_18_discord.member_name = regular_hours.member_name
+        JOIN 
+            overtime
+        ON 
+            overtime.member_name = regular_hours.member_name
+        JOIN
+            production
+        ON
+            production.member_name = regular_hours.member_name
+        JOIN 
+            sales
+        ON
+            sales.member_name = regular_hours.member_name
+        JOIN 
+            wages
+        ON
+            wages.member_name = regular_hours.member_name;
+    """).fetchall()
+    print(MEMBERDATA)
+    CONNECTION.commit()
+
+def queryWages(NAME) -> None:
+    """
+    queries the wages table for a members wages
+    :param NAME: str
+    :return: None
+    """
+    global CURSOR
+    WAGE = CURSOR.execute(f"""
+        SELECT
+            percent_wages
+        FROM
+            wages
+        WHERE
+            member_name = "{NAME}";
+    """).fetchone()
+
+    print(f"The percent of profit that {NAME} will receive is {WAGE[0]}%.")
 
 # OUTPUTS # 
 
@@ -509,13 +571,14 @@ if __name__ == "__main__":
         setupDatabase(REGULARDATA, OVERTIMEDATA, SUMMARYDATA, TOTALDATA, PRODUCTIONDATA, SALESDATA)
         TOTALWAGES = calculateWages()
         wageDatabase(TOTALWAGES)
-        conglomerateTable()
     CHOICE = menu()
 # PROCESSING #
     if CHOICE == 1:
-        pass
+        REGULARDATA, OVERTIMEDATA, SUMMARYDATA, TOTALDATA, PRODUCTIONDATA, SALESDATA = extractFiles()
+        conglomerateTable(REGULARDATA, OVERTIMEDATA)
     elif CHOICE == 2:
         NAME = getMember()
+        queryWages(NAME)
 # OUTPUTS #
     elif CHOICE == 3:
         exit()
