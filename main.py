@@ -18,12 +18,12 @@ if (pathlib.Path.cwd() / DBNAME).exists(): # checks if there is already a databa
 CONNECTION = sqlite3.connect(DBNAME)
 CURSOR = CONNECTION.cursor()
 
-REGULARFILE = "SAMPLE CALC JA Wage Calculation - Regular Hours.csv"
-OVERTIMEFILE = "SAMPLE CALC JA Wage Calculation - Overtime.csv"
-SUMMARYFILE = "SAMPLE CALC JA Wage Calculation - Summary.csv"
-TOTALFILE = "SAMPLE CALC JA Wage Calculation - Total Hours.csv"
-PRODUCTIONFILE = "SAMPLE CALC JA Wage Calculation - Production.csv"
-SALESFILE = "SAMPLE CALC JA Wage Calculation - Sales.csv"
+REGULARFILE = "JA Wage Calculation - Regular Hours.csv"
+OVERTIMEFILE = "JA Wage Calculation - Overtime.csv"
+SUMMARYFILE = "JA Wage Calculation - Summary.csv"
+TOTALFILE = "JA Wage Calculation - Total Hours.csv"
+PRODUCTIONFILE = "JA Wage Calculation - Production.csv"
+SALESFILE = "JA Wage Calculation - Sales.csv"
 
 ### FUNCTIONS ###
 
@@ -446,7 +446,7 @@ def calculateWages() -> list:
         # calculates overtime hours 
         MEMBEROVERTIME[i] = list(MEMBEROVERTIME[i])
         while MEMBEROVERTIME[i][1] >= 20:
-            TOTALMEMBER = TOTALMEMBER * 1.1
+            TOTALMEMBER = TOTALMEMBER * 1.05
             MEMBERWAGES = TOTALMEMBER/TOTALHOURS * 100
             MEMBEROVERTIME[i][1] = MEMBEROVERTIME[i][1] - 20
         TOTALPERCENTAGE = TOTALPERCENTAGE - MEMBERWAGES
