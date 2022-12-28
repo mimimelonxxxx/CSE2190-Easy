@@ -18,12 +18,12 @@ if (pathlib.Path.cwd() / DBNAME).exists(): # checks if there is already a databa
 CONNECTION = sqlite3.connect(DBNAME)
 CURSOR = CONNECTION.cursor()
 
-REGULARFILE = "JA Wage Calculation - Regular Hours.csv"
-OVERTIMEFILE = "JA Wage Calculation - Overtime.csv"
-SUMMARYFILE = "JA Wage Calculation - Summary.csv"
-TOTALFILE = "JA Wage Calculation - Total Hours.csv"
-PRODUCTIONFILE = "JA Wage Calculation - Production.csv"
-SALESFILE = "JA Wage Calculation - Sales.csv"
+REGULARFILE = "SAMPLE CALC JA Wage Calculation - Regular Hours.csv"
+OVERTIMEFILE = "SAMPLE CALC JA Wage Calculation - Overtime.csv"
+SUMMARYFILE = "SAMPLE CALC JA Wage Calculation - Summary.csv"
+TOTALFILE = "SAMPLE CALC JA Wage Calculation - Total Hours.csv"
+PRODUCTIONFILE = "SAMPLE CALC JA Wage Calculation - Production.csv"
+SALESFILE = "SAMPLE CALC JA Wage Calculation - Sales.csv"
 
 ### FUNCTIONS ###
 
@@ -123,10 +123,10 @@ def extractFiles() -> list:
                 SUMMARYDATA[i] = SUMMARYDATA[i][:-1] 
         SUMMARYDATA[i] = SUMMARYDATA[i].split(",")
         for j in range(len(SUMMARYDATA[i])):
-            if SUMMARYDATA[i][j] == '':
-                SUMMARYDATA[i][j] = 0
             if SUMMARYDATA[i][j].isnumeric():
                 SUMMARYDATA[i][j] = int(SUMMARYDATA[i][j])
+            if SUMMARYDATA[i][j] == '':
+                SUMMARYDATA[i][j] = 0
 
     # TOTAL DATA
     for i in range(len(TOTALDATA)):
@@ -145,10 +145,10 @@ def extractFiles() -> list:
                 PRODUCTIONDATA[i] = PRODUCTIONDATA[i][:-1] 
         PRODUCTIONDATA[i] = PRODUCTIONDATA[i].split(",")
         for j in range(len(PRODUCTIONDATA[i])):
-            if PRODUCTIONDATA[i][j] == '':
-                PRODUCTIONDATA[i][j] = 0
             if PRODUCTIONDATA[i][j].isnumeric():
                 PRODUCTIONDATA[i][j] = int(PRODUCTIONDATA[i][j])
+            if PRODUCTIONDATA[i][j] == '':
+                PRODUCTIONDATA[i][j] = 0
 
     # SALES DATA
     for i in range(len(SALESDATA)):
@@ -156,10 +156,10 @@ def extractFiles() -> list:
                 SALESDATA[i] = SALESDATA[i][:-1] 
         SALESDATA[i] = SALESDATA[i].split(",")
         for j in range(len(SALESDATA[i])):
-            if SALESDATA[i][j] == '':
-                SALESDATA[i][j] = 0
             if SALESDATA[i][j].isnumeric():
                 SALESDATA[i][j] = int(SALESDATA[i][j])
+            if SALESDATA[i][j] == '':
+                SALESDATA[i][j] = 0
 
     return REGULARDATA, OVERTIMEDATA, SUMMARYDATA, TOTALDATA, PRODUCTIONDATA, SALESDATA
 
@@ -276,8 +276,7 @@ def setupDatabase(REGULARDATA, OVERTIMEDATA, SUMMARYDATA, TOTALDATA, PRODUCTIOND
     CURSOR.execute("""
         CREATE TABLE
             total_hours (
-                total_regular REAL NOT NULL,
-                total_overtime REAL NOT NULL
+                total_hours REAL NOT NULL
             );
     """)
 
@@ -286,10 +285,9 @@ def setupDatabase(REGULARDATA, OVERTIMEDATA, SUMMARYDATA, TOTALDATA, PRODUCTIOND
             INSERT INTO
                 total_hours
             VALUES (
-                ?,
                 ?
             );
-        """, [TOTALDATA[i][0], TOTALDATA[i][1]])
+        """, [TOTALDATA[i][0]])
 
     # PRODUCTION
     CURSOR.execute("""
@@ -371,16 +369,9 @@ def calculateWages() -> list:
     calculates percentage wages for all members in the database 
     :return: list (each members wages in order)
     """
-    TOTALREGULAR = CURSOR.execute("""
+    TOTALHOURS = CURSOR.execute("""
         SELECT
-            total_regular
-        FROM
-            total_hours;
-    """).fetchone()
-
-    TOTALOVERTIME = CURSOR.execute("""
-        SELECT
-            total_overtime
+            *
         FROM
             total_hours;
     """).fetchone()
@@ -414,21 +405,31 @@ def calculateWages() -> list:
     """).fetchall()
 
     # calculate total hours 
-    TOTALHOURS = TOTALREGULAR[0] + TOTALOVERTIME[0]
-    TOTALHOURS = round(TOTALHOURS, 2)
+    TOTALHOURS = TOTALHOURS[0]
 
     # calculate each members percentage 
     TOTALWAGES = []
+    TOTALPERCENTAGE = 100
     for i in range(len(MEMBERREGULAR)): # the length of MEMBERREGULAR should be the same as the other lists 
         TOTALMEMBER = MEMBERREGULAR[i][1] + MEMBEROVERTIME[i][1]
         MEMBERWAGES = TOTALMEMBER/TOTALHOURS * 100
         if MEMBERREGULAR[i][1] >= 20 or MEMBERPRODUCTION[i][1] >= 20 or MEMBERSALES[i][1] >= 20:
             TOTALMEMBER = TOTALMEMBER * 1.02
             MEMBERWAGES = TOTALMEMBER/TOTALHOURS * 100
+            TOTALPERCENTAGE = TOTALPERCENTAGE - MEMBERWAGES
+            if TOTALPERCENTAGE < 0:
+                print("Michelle you messed up real bad")
+            TOTALWAGES.append(MEMBERWAGES)
         elif MEMBEROVERTIME[i][1] >= 20:
-            pass
+            TOTALMEMBER = TOTALMEMBER * 1.2
+            MEMBERWAGES = TOTALMEMBER/TOTALHOURS * 100
+            TOTALPERCENTAGE = TOTALPERCENTAGE - MEMBERWAGES
+            if TOTALPERCENTAGE < 0:
+                print("Michelle you messed up real bad")
+            TOTALWAGES.append(MEMBERWAGES)
+    print(TOTALPERCENTAGE)
     print(TOTALWAGES)
-
+# THIS PART NEEDS FIXING ^ 
 
 
 # OUTPUTS # 
